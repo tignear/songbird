@@ -46,6 +46,7 @@ symphonia = { default-features = false, optional = true, version = "0.5.2" }
 symphonia-core = { optional = true, version = "0.5.2" }
 tokio = { default-features = false, optional = true, version = "1.0" }
 tokio-tungstenite = { optional = true, version = "0.21" }
+tokio-websockets = { optional = true, version = "0.5", features = ["client", "fastrand", "sha1_smol", "simd"] }
 tokio-util = { features = ["io"], optional = true, version = "0.7" }
 tracing = { version = "0.1", features = ["log"] }
 tracing-futures = "0.2"
@@ -68,6 +69,7 @@ default = [
     "gateway",
     "rustls",
     "serenity",
+    "tungstenite"
 ]
 gateway = [
     "dep:async-trait",
@@ -101,7 +103,6 @@ driver = [
     "dep:symphonia",
     "dep:symphonia-core",
     "dep:tokio",
-    "dep:tokio-tungstenite",
     "dep:tokio-util",
     "dep:url",
     "dep:uuid",
@@ -119,6 +120,8 @@ rustls = [
     "serenity?/rustls_backend",
     "stream_lib?/rustls-tls",
     "tokio-tungstenite?/rustls-tls-webpki-roots",
+    "tokio-websockets?/ring",
+    "tokio-websockets?/rustls-native-roots",
     "twilight-gateway?/rustls-native-roots",
 ]
 native = [
@@ -126,8 +129,11 @@ native = [
     "serenity?/native_tls_backend",
     "stream_lib?/native-tls",
     "tokio-tungstenite?/native-tls",
+    "tokio-websockets?/native-tls",
     "twilight-gateway?/native",
 ]
+tungstenite = ["dep:tokio-tungstenite"]
+tws = ["dep:tokio-websockets"]
 twilight = ["dep:twilight-gateway","dep:twilight-model"]
 
 # Behaviour altering features.
@@ -135,7 +141,7 @@ builtin-queue = []
 receive = ["dep:bytes", "discortp?/demux", "discortp?/rtcp"]
 
 # Used for docgen/testing/benchmarking.
-full-doc = ["default", "twilight", "builtin-queue", "receive"]
+full-doc = ["default", "tungstenite", "twilight", "builtin-queue", "receive"]
 internals = ["dep:byteorder"]
 
 [lib]
