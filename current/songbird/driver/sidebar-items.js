@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Bitrate","CryptoMode","DecodeMode","MixMode","SchedulerError","SchedulerMode"],"mod":["retry"],"static":["DEFAULT_SCHEDULER"],"struct":["Connect","Driver","LiveStatBlock","Scheduler","SchedulerConfig"]};
+window.SIDEBAR_ITEMS = {"enum":["Bitrate","CryptoMode","DecodeMode","MixMode","SchedulerError","SchedulerMode"],"mod":["retry"],"static":["DEFAULT_SCHEDULER"],"struct":["Connect","DisposalThread","Driver","LiveStatBlock","Scheduler","SchedulerConfig"]};
