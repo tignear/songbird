@@ -121,6 +121,10 @@
 <a href="#119" id="119">119</a>
 <a href="#120" id="120">120</a>
 <a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
     error::ConnectionError,
     id::<span class="kw-2">*</span>,
@@ -199,6 +203,10 @@
     </span>ProtocolViolation,
     <span class="doccomment">/// A voice connection was not established in the specified time.
     </span>TimedOut,
+    <span class="doccomment">/// The call was manually disconnected by a user command, e.g. [`Driver::leave`].
+    ///
+    /// [`Driver::leave`]: crate::driver::Driver::leave
+    </span>Requested,
     <span class="doccomment">/// The Websocket connection was closed by Discord.
     ///
     /// This typically indicates that the voice session has expired,

@@ -355,6 +355,8 @@
 <a href="#353" id="353">353</a>
 <a href="#354" id="354">354</a>
 <a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Runner for a voice connection.
 //!
 //! Songbird's driver is a mixed-sync system, using:
@@ -421,6 +423,8 @@
 <span class="kw">use </span>flume::{r#async::RecvFut, SendError, Sender};
 <span class="attr">#[cfg(feature = <span class="string">"builtin-queue"</span>)]
 </span><span class="kw">use </span>std::time::Duration;
+<span class="attr">#[allow(unused_imports)]
+</span><span class="kw">pub use </span>tasks::disposal::DisposalThread;
 <span class="kw">use </span>tasks::message::CoreMessage;
 <span class="kw">use </span>tracing::instrument;
 

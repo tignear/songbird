@@ -347,6 +347,11 @@
 <a href="#345" id="345">345</a>
 <a href="#346" id="346">346</a>
 <a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(missing_docs)]
 
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>disposal;
@@ -458,7 +463,7 @@
                     drop(interconnect.events.send(EventMessage::FireCoreEvent(
                         CoreContext::DriverDisconnect(InternalDisconnect {
                             kind: DisconnectKind::Runtime,
-                            reason: <span class="prelude-val">None</span>,
+                            reason: <span class="prelude-val">Some</span>(DisconnectReason::Requested),
                             info: conn.info.clone(),
                         }),
                     )));
@@ -469,21 +474,26 @@
                 // (i.e., prevent users from mistakenly trying to reconnect for an *old* dead conn).
                 // if it *is* a match, the conn needs to die!
                 // (as the WS channel has truly given up the ghost).
-                </span><span class="kw">if </span>ws_idx == attempt_idx {
-                    connection = <span class="prelude-val">None</span>;
+                </span><span class="kw">let </span>conn = <span class="kw">if </span>ws_idx == attempt_idx {
                     drop(interconnect.mixer.send(MixerMessage::DropConn));
                     drop(interconnect.mixer.send(MixerMessage::RebuildEncoder));
+                    connection.take()
                 } <span class="kw">else </span>{
                     reason = <span class="prelude-val">None</span>;
-                }
+                    <span class="prelude-val">None
+                </span>};
 
-                drop(interconnect.events.send(EventMessage::FireCoreEvent(
-                    CoreContext::DriverDisconnect(InternalDisconnect {
-                        kind: DisconnectKind::Runtime,
-                        reason,
-                        info: ws_info,
-                    }),
-                )));
+                <span class="comment">// Conn may have been unset earlier (i.e., in a deliberate disconnect).
+                // If so, do not repropagate/repeat the disconnect event.
+                </span><span class="kw">if </span>conn.is_some() {
+                    drop(interconnect.events.send(EventMessage::FireCoreEvent(
+                        CoreContext::DriverDisconnect(InternalDisconnect {
+                            kind: DisconnectKind::Runtime,
+                            reason,
+                            info: ws_info,
+                        }),
+                    )));
+                }
             },
             CoreMessage::SetTrack(s) =&gt; {
                 drop(interconnect.mixer.send(MixerMessage::SetTrack(s)));

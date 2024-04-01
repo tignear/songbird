@@ -39,6 +39,7 @@
 <a href="#37" id="37">37</a>
 <a href="#38" id="38">38</a>
 <a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::message::<span class="kw-2">*</span>;
 <span class="kw">use </span>flume::{Receiver, Sender};
 <span class="kw">use </span>tracing::{instrument, trace};
@@ -53,7 +54,8 @@
 }
 
 <span class="kw">impl </span>DisposalThread {
-    <span class="kw">pub fn </span>run() -&gt; <span class="self">Self </span>{
+    <span class="attr">#[must_use]
+    </span><span class="kw">pub fn </span>run() -&gt; <span class="self">Self </span>{
         <span class="kw">let </span>(mix_tx, mix_rx) = flume::unbounded();
         std::thread::spawn(<span class="kw">move </span>|| {
             <span class="macro">trace!</span>(<span class="string">"Disposal thread started."</span>);
