@@ -41,6 +41,7 @@ serenity-voice-model = { optional = true, version = "0.2" }
 simd-json = { features = ["serde_impl"], optional = true, version = "0.13" }
 socket2 = { optional = true, version = "0.5" }
 streamcatcher = { optional = true, version = "1" }
+stream_lib = { optional = true, version = "0.4.1" }
 symphonia = { default_features = false, optional = true, version = "0.5.2" }
 symphonia-core = { optional = true, version = "0.5.2" }
 tokio = { default-features = false, optional = true, version = "1.0" }
@@ -83,20 +84,22 @@ driver = [
     "dep:async-trait",
     "dep:audiopus",
     "dep:byteorder",
+    "dep:bytes",
     "dep:crypto_secretbox",
     "dep:discortp",
-    "dep:reqwest",
     "dep:flume",
     "dep:nohash-hasher",
     "dep:once_cell",
     "dep:parking_lot",
     "dep:rand",
+    "dep:reqwest",
     "dep:ringbuf",
     "dep:rubato",
     "dep:rusty_pool",
     "dep:serde-aux",
     "dep:serenity-voice-model",
     "dep:socket2",
+    "dep:stream_lib",
     "dep:streamcatcher",
     "dep:symphonia",
     "dep:symphonia-core",

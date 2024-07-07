@@ -16,6 +16,8 @@ use std::{error::Error, io::ErrorKind};
 use symphonia_core::io::MediaSource;
 use tokio::process::Command;
 
+use super::HlsRequest;
+
 const YOUTUBE_DL_COMMAND: &str = "yt-dlp";
 
 #[derive(Clone, Debug)]
@@ -194,14 +196,23 @@ impl Compose for YoutubeDl {
             }));
         }
 
-        let mut req = HttpRequest {
-            client: self.client.clone(),
-            request: result.url,
-            headers,
-            content_length: result.filesize,
-        };
-
-        req.create_async().await
+        #[allow(clippy::single_match_else)]
+        match result.protocol.as_deref() {
+            Some("m3u8_native") => {
+                let mut req =
+                    HlsRequest::new_with_headers(self.client.clone(), result.url, headers);
+                req.create()
+            },
+            _ => {
+                let mut req = HttpRequest {
+                    client: self.client.clone(),
+                    request: result.url,
+                    headers,
+                    content_length: result.filesize,
+                };
+                req.create_async().await
+            },
+        }
     }
 
     fn should_create_async(&self) -> bool {
