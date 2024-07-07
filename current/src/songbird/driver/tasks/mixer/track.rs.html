@@ -398,6 +398,7 @@
 <a href="#398" id="398">398</a>
 <a href="#399" id="399">399</a>
 <a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::tracks::{ReadyState, SeekRequest};
 <span class="kw">use </span>std::result::Result <span class="kw">as </span>StdResult;
 <span class="kw">use </span>symphonia_core::errors::Error <span class="kw">as </span>SymphError;
@@ -642,7 +643,7 @@
                     },
                     <span class="prelude-val">Ok</span>(MixerInputResultMessage::Seek(parsed, rec, seek_res)) =&gt; {
                         <span class="kw">match </span>seek_res {
-                            <span class="prelude-val">Ok</span>(pos) =&gt;
+                            <span class="prelude-val">Ok</span>(pos) =&gt; {
                                 <span class="kw">if let </span><span class="prelude-val">Some</span>(time_base) = parsed.decoder.codec_params().time_base {
                                     <span class="comment">// Update track's position to match the actual timestamp the
                                     // seek landed at.
@@ -682,7 +683,8 @@
                                         SymphError::Unsupported(<span class="string">"Track had no recorded time base."</span>)
                                             .into(),
                                     ))
-                                },
+                                }
+                            },
                             <span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(InputReadyingError::Seeking(e)),
                         }
                     },

@@ -53,6 +53,7 @@
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
 <a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::AuxMetadata;
 <span class="kw">use </span><span class="kw">crate</span>::constants::SAMPLE_RATE_RAW;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
@@ -74,6 +75,7 @@
     <span class="kw">pub </span>uploader: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>url: String,
     <span class="kw">pub </span>webpage_url: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>protocol: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="kw">impl </span>Output {

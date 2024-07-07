@@ -135,6 +135,7 @@
 <a href="#135" id="135">135</a>
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Connection errors and convenience types.
 
 </span><span class="kw">use crate</span>::{
@@ -238,8 +239,9 @@
             <span class="self">Self</span>::CryptoModeInvalid =&gt; <span class="macro">write!</span>(f, <span class="string">"server changed negotiated encryption mode"</span>),
             <span class="self">Self</span>::CryptoModeUnavailable =&gt; <span class="macro">write!</span>(f, <span class="string">"server did not offer chosen encryption mode"</span>),
             <span class="self">Self</span>::EndpointUrl =&gt; <span class="macro">write!</span>(f, <span class="string">"endpoint URL received from gateway was invalid"</span>),
-            <span class="self">Self</span>::IllegalDiscoveryResponse =&gt;
-                <span class="macro">write!</span>(f, <span class="string">"IP discovery/NAT punching response was invalid"</span>),
+            <span class="self">Self</span>::IllegalDiscoveryResponse =&gt; {
+                <span class="macro">write!</span>(f, <span class="string">"IP discovery/NAT punching response was invalid"</span>)
+            },
             <span class="self">Self</span>::IllegalIp =&gt; <span class="macro">write!</span>(f, <span class="string">"IP discovery/NAT punching response had bad IP value"</span>),
             <span class="self">Self</span>::Io(e) =&gt; e.fmt(f),
             <span class="self">Self</span>::Json(e) =&gt; e.fmt(f),
