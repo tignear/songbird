@@ -22,8 +22,8 @@ pub struct WsStream(WebSocketStream<MaybeTlsStream<TcpStream>>);
 impl WsStream {
     #[instrument]
     pub(crate) async fn connect(url: Url) -> Result<Self> {
-        let (stream, _) = tokio_tungstenite::connect_async_with_config::<Url>(
-            url,
+        let (stream, _) = tokio_tungstenite::connect_async_with_config(
+            url.to_string(),
             Some(Config {
                 max_message_size: None,
                 max_frame_size: None,
