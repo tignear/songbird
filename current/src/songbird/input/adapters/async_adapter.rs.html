@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/input/adapters/async_adapter.rs`."><title>async_adapter.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="songbird" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (ed7e35f34 2024-07-06)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/serenity-rs/songbird/current/songbird-ico.png"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/input/adapters/async_adapter.rs`."><title>async_adapter.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="songbird" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (20ae37c18 2024-07-07)" data-channel="nightly" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/serenity-rs/songbird/current/songbird-ico.png"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -375,11 +375,20 @@
 <a href="#375" id="375">375</a>
 <a href="#376" id="376">376</a>
 <a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::input::AudioStreamError;
 <span class="kw">use </span>async_trait::async_trait;
 <span class="kw">use </span>flume::{Receiver, RecvError, Sender, TryRecvError};
 <span class="kw">use </span>futures::{future::Either, stream::FuturesUnordered, FutureExt, StreamExt};
-<span class="kw">use </span>ringbuf::<span class="kw-2">*</span>;
+<span class="kw">use </span>parking_lot::Mutex;
+<span class="kw">use </span>ringbuf::{traits::<span class="kw-2">*</span>, <span class="kw-2">*</span>};
 <span class="kw">use </span>std::{
     io::{
         Error <span class="kw">as </span>IoError,
@@ -402,7 +411,7 @@
 };
 
 <span class="kw">struct </span>AsyncAdapterSink {
-    bytes_in: HeapProducer&lt;u8&gt;,
+    bytes_in: HeapProd&lt;u8&gt;,
     req_rx: Receiver&lt;AdapterRequest&gt;,
     resp_tx: Sender&lt;AdapterResponse&gt;,
     stream: Box&lt;<span class="kw">dyn </span>AsyncMediaSource&gt;,
@@ -513,7 +522,10 @@
 /// pass along seek requests needed. This allows for passing bytes from exclusively `AsyncRead`
 /// streams (e.g., hyper HTTP sessions) to Songbird.
 </span><span class="kw">pub struct </span>AsyncAdapterStream {
-    bytes_out: HeapConsumer&lt;u8&gt;,
+    <span class="comment">// Note: this mutex is here to appease symphonia's Send + Sync bound.
+    // Only one thread should own and pull from this stream, so in practice
+    // there is no contention.
+    </span>bytes_out: Mutex&lt;HeapCons&lt;u8&gt;&gt;,
     can_seek: bool,
     <span class="comment">// Note: these are Atomic just to work around the need for
     // check_messages to take &amp;self rather than &amp;mut.
@@ -530,6 +542,7 @@
     </span><span class="attr">#[must_use]
     </span><span class="kw">pub fn </span>new(stream: Box&lt;<span class="kw">dyn </span>AsyncMediaSource&gt;, buf_len: usize) -&gt; AsyncAdapterStream {
         <span class="kw">let </span>(bytes_in, bytes_out) = SharedRb::new(buf_len).split();
+        <span class="kw">let </span>bytes_out = bytes_out.into();
         <span class="kw">let </span>(resp_tx, resp_rx) = flume::unbounded();
         <span class="kw">let </span>(req_tx, req_rx) = flume::unbounded();
         <span class="kw">let </span>can_seek = stream.is_seekable();
@@ -610,7 +623,8 @@
                 || <span class="self">self</span>.finalised.load(Ordering::Relaxed));
             drop(<span class="self">self</span>.handle_messages(Operation::Read { block }));
 
-            <span class="kw">match </span><span class="self">self</span>.bytes_out.read(buf) {
+            <span class="kw">let </span><span class="kw-2">mut </span>rb = <span class="self">self</span>.bytes_out.lock();
+            <span class="kw">match </span>rb.read(buf) {
                 <span class="prelude-val">Ok</span>(n) =&gt; {
                     <span class="self">self</span>.notify_tx.notify_one();
                     <span class="kw">return </span><span class="prelude-val">Ok</span>(n);
@@ -655,7 +669,9 @@
             <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
         }
 
-        <span class="self">self</span>.bytes_out.skip(<span class="self">self</span>.bytes_out.capacity());
+        <span class="kw">let </span><span class="kw-2">mut </span>rb = <span class="self">self</span>.bytes_out.lock();
+        <span class="kw">let </span>cap = rb.capacity();
+        rb.skip(cap.into());
 
         <span class="kw">_ </span>= <span class="self">self</span>.req_tx.send(AdapterRequest::SeekCleared);
 
