@@ -2,7 +2,8 @@ use crate::input::AudioStreamError;
 use async_trait::async_trait;
 use flume::{Receiver, RecvError, Sender, TryRecvError};
 use futures::{future::Either, stream::FuturesUnordered, FutureExt, StreamExt};
-use ringbuf::*;
+use parking_lot::Mutex;
+use ringbuf::{traits::*, *};
 use std::{
     io::{
         Error as IoError,
@@ -25,7 +26,7 @@ use tokio::{
 };
 
 struct AsyncAdapterSink {
-    bytes_in: HeapProducer<u8>,
+    bytes_in: HeapProd<u8>,
     req_rx: Receiver<AdapterRequest>,
     resp_tx: Sender<AdapterResponse>,
     stream: Box<dyn AsyncMediaSource>,
@@ -136,7 +137,10 @@ impl AsyncAdapterSink {
 /// pass along seek requests needed. This allows for passing bytes from exclusively `AsyncRead`
 /// streams (e.g., hyper HTTP sessions) to Songbird.
 pub struct AsyncAdapterStream {
-    bytes_out: HeapConsumer<u8>,
+    // Note: this mutex is here to appease symphonia's Send + Sync bound.
+    // Only one thread should own and pull from this stream, so in practice
+    // there is no contention.
+    bytes_out: Mutex<HeapCons<u8>>,
     can_seek: bool,
     // Note: these are Atomic just to work around the need for
     // check_messages to take &self rather than &mut.
@@ -153,6 +157,7 @@ impl AsyncAdapterStream {
     #[must_use]
     pub fn new(stream: Box<dyn AsyncMediaSource>, buf_len: usize) -> AsyncAdapterStream {
         let (bytes_in, bytes_out) = SharedRb::new(buf_len).split();
+        let bytes_out = bytes_out.into();
         let (resp_tx, resp_rx) = flume::unbounded();
         let (req_tx, req_rx) = flume::unbounded();
         let can_seek = stream.is_seekable();
@@ -233,7 +238,8 @@ impl Read for AsyncAdapterStream {
                 || self.finalised.load(Ordering::Relaxed));
             drop(self.handle_messages(Operation::Read { block }));
 
-            match self.bytes_out.read(buf) {
+            let mut rb = self.bytes_out.lock();
+            match rb.read(buf) {
                 Ok(n) => {
                     self.notify_tx.notify_one();
                     return Ok(n);
@@ -278,7 +284,9 @@ impl Seek for AsyncAdapterStream {
             _ => unreachable!(),
         }
 
-        self.bytes_out.skip(self.bytes_out.capacity());
+        let mut rb = self.bytes_out.lock();
+        let cap = rb.capacity();
+        rb.skip(cap.into());
 
         _ = self.req_tx.send(AdapterRequest::SeekCleared);
 
