@@ -12,7 +12,7 @@ use crate::{
     ConnectionInfo,
 };
 use flume::Receiver;
-use rand::random;
+use rand::{distributions::Uniform, Rng};
 #[cfg(feature = "receive")]
 use std::sync::Arc;
 use std::time::Duration;
@@ -174,7 +174,11 @@ impl AuxNetwork {
     }
 
     async fn send_heartbeat(&mut self) -> Result<(), WsError> {
-        let nonce = random::<u64>();
+        // Discord have suddenly, mysteriously, started rejecting
+        // ints-as-strings. Keep JS happy here, I suppose...
+        const JS_MAX_INT: u64 = (1u64 << 53) - 1;
+        let nonce_range = Uniform::from(0..JS_MAX_INT);
+        let nonce = rand::thread_rng().sample(nonce_range);
         self.last_heartbeat_nonce = Some(nonce);
 
         trace!("Sent heartbeat {:?}", self.speaking);
