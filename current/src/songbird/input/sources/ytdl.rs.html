@@ -294,6 +294,9 @@
 <a href="#294" id="294">294</a>
 <a href="#295" id="295">295</a>
 <a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::input::{
     metadata::ytdl::Output,
     AudioStream,
@@ -543,6 +546,7 @@
     }
 
     <span class="attr">#[tokio::test]
+    #[ignore]
     #[ntest::timeout(<span class="number">20_000</span>)]
     </span><span class="kw">async fn </span>ytdl_page_with_playlist_plays() {
         track_plays_passthrough(|| YoutubeDl::new(Client::new(), YTDL_PLAYLIST_TARGET.into()))
@@ -570,6 +574,7 @@
     }
 
     <span class="attr">#[tokio::test]
+    #[ignore]
     #[ntest::timeout(<span class="number">20_000</span>)]
     </span><span class="kw">async fn </span>ytdl_search_plays() {
         <span class="kw">let </span><span class="kw-2">mut </span>ytdl = YoutubeDl::new_search(Client::new(), <span class="string">"cloudkicker 94 days"</span>.into());
@@ -582,6 +587,7 @@
     }
 
     <span class="attr">#[tokio::test]
+    #[ignore]
     #[ntest::timeout(<span class="number">20_000</span>)]
     </span><span class="kw">async fn </span>ytdl_search_3() {
         <span class="kw">let </span><span class="kw-2">mut </span>ytdl = YoutubeDl::new_search(Client::new(), <span class="string">"test"</span>.into());
