@@ -146,13 +146,11 @@
 <a href="#145" id="145">145</a>
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
-<a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a></pre></div><pre class="rust"><code><span class="doccomment">//! Driver and gateway error handling.
+<a href="#148" id="148">148</a></pre></div><pre class="rust"><code><span class="doccomment">//! Driver and gateway error handling.
 
 </span><span class="attr">#[cfg(feature = <span class="string">"serenity"</span>)]
 </span><span class="kw">use </span>futures::channel::mpsc::TrySendError;
-<span class="attr">#[cfg(not(feature = <span class="string">"simd-json"</span>))]
-</span><span class="kw">pub use </span>serde_json::Error <span class="kw">as </span>JsonError;
+<span class="kw">pub use </span>serde_json::Error <span class="kw">as </span>JsonError;
 <span class="attr">#[cfg(feature = <span class="string">"serenity"</span>)]
 </span><span class="kw">use </span>serenity::gateway::ShardRunnerMessage;
 <span class="attr">#[cfg(feature = <span class="string">"gateway"</span>)]

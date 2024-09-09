@@ -463,7 +463,7 @@
             .stdout
             .split(|<span class="kw-2">&amp;</span>b| b == <span class="string">b'\n'</span>)
             .filter(|<span class="kw-2">&amp;</span>x| (!x.is_empty()))
-            .map(|x| serde_json::from_slice(x))
+            .map(serde_json::from_slice)
             .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;Output&gt;, <span class="kw">_</span>&gt;&gt;()
             .map_err(|e| AudioStreamError::Fail(Box::new(e)))<span class="question-mark">?</span>;
 
