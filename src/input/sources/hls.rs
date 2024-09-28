@@ -1,22 +1,14 @@
-use std::{
-    io::{ErrorKind as IoErrorKind, Result as IoResult, SeekFrom},
-    pin::Pin,
-    task::{Context, Poll},
-};
-
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::StreamExt;
-use pin_project::pin_project;
 use reqwest::{header::HeaderMap, Client};
 use stream_lib::Event;
 use symphonia_core::io::MediaSource;
-use tokio::io::{AsyncRead, AsyncSeek, ReadBuf};
 use tokio_util::io::StreamReader;
 
 use crate::input::{
     AsyncAdapterStream,
-    AsyncMediaSource,
+    AsyncReadOnlySource,
     AudioStream,
     AudioStreamError,
     Compose,
@@ -51,7 +43,7 @@ impl HlsRequest {
         }
     }
 
-    fn create_stream(&mut self) -> Result<HlsStream, AudioStreamError> {
+    fn create_stream(&mut self) -> Result<AsyncReadOnlySource, AudioStreamError> {
         let request = self
             .client
             .get(&self.request)
@@ -70,51 +62,7 @@ impl HlsRequest {
             )),
         })));
 
-        Ok(HlsStream { stream })
-    }
-}
-
-#[pin_project]
-struct HlsStream {
-    #[pin]
-    stream: Box<dyn AsyncRead + Send + Sync + Unpin>,
-}
-
-impl AsyncRead for HlsStream {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
-    ) -> Poll<IoResult<()>> {
-        AsyncRead::poll_read(self.project().stream, cx, buf)
-    }
-}
-
-impl AsyncSeek for HlsStream {
-    fn start_seek(self: Pin<&mut Self>, _position: SeekFrom) -> IoResult<()> {
-        Err(IoErrorKind::Unsupported.into())
-    }
-
-    fn poll_complete(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<IoResult<u64>> {
-        unreachable!()
-    }
-}
-
-#[async_trait]
-impl AsyncMediaSource for HlsStream {
-    fn is_seekable(&self) -> bool {
-        false
-    }
-
-    async fn byte_len(&self) -> Option<u64> {
-        None
-    }
-
-    async fn try_resume(
-        &mut self,
-        _offset: u64,
-    ) -> Result<Box<dyn AsyncMediaSource>, AudioStreamError> {
-        Err(AudioStreamError::Unsupported)
+        Ok(AsyncReadOnlySource { stream })
     }
 }
 
