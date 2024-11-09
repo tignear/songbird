@@ -6,7 +6,10 @@ use super::{
     tasks::{
         message::*,
         ws::{self as ws_task, AuxNetwork},
-    }, Cipher, Config, CryptoMode
+    },
+    Cipher,
+    Config,
+    CryptoMode,
 };
 use crate::{
     constants::*,
@@ -346,7 +349,7 @@ async fn init_cipher(client: &mut WsStream, mode: CryptoMode) -> Result<Cipher> 
                     return Err(Error::CryptoModeInvalid);
                 }
 
-                return Ok(mode.new_cipher(&desc.secret_key))
+                return Ok(mode.new_cipher(&desc.secret_key));
             },
             other => {
                 debug!(

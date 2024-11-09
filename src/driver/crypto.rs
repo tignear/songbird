@@ -278,9 +278,8 @@ impl CryptoMode {
             CryptoMode::Lite | CryptoMode::Normal | CryptoMode::Suffix => Cipher::XSalsa20(
                 XSalsa20Poly1305::new_from_slice(&key[..XSalsa20Poly1305::KEY_SIZE]).unwrap(),
             ),
-            CryptoMode::Aes256Gcm => {
-                Cipher::Aes256Gcm(Aes256Gcm::new_from_slice(&key[..Aes256Gcm::key_size()]).unwrap())
-            },
+            CryptoMode::Aes256Gcm =>
+                Cipher::Aes256Gcm(Aes256Gcm::new_from_slice(&key[..Aes256Gcm::key_size()]).unwrap()),
             CryptoMode::XChaCha20 => Cipher::XChaCha20(
                 XChaCha20Poly1305::new_from_slice(&key[..XChaCha20Poly1305::key_size()]).unwrap(),
             ),

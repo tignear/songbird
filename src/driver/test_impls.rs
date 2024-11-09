@@ -66,7 +66,9 @@ impl Mixer {
 
         #[cfg(feature = "receive")]
         let fake_conn = MixerConnection {
-            cipher: Cipher::XSalsa20(XSalsa20Poly1305::new_from_slice(&[0u8; XSalsa20Poly1305::KEY_SIZE]).unwrap()),
+            cipher: Cipher::XSalsa20(
+                XSalsa20Poly1305::new_from_slice(&[0u8; XSalsa20Poly1305::KEY_SIZE]).unwrap(),
+            ),
             crypto_state: CryptoState::Normal,
             udp_rx: udp_receiver_tx,
             udp_tx,
