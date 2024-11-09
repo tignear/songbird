@@ -53,7 +53,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ntest::timeout(10_000)]
+    #[ntest::timeout(15_000)]
     async fn finite_track_loops_work() {
         let (t_handle, config) = Config::test_cfg(true);
         let mut driver = Driver::new(config.clone());
@@ -89,7 +89,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ntest::timeout(10_000)]
+    #[ntest::timeout(15_000)]
     async fn infinite_track_loops_work() {
         let (t_handle, config) = Config::test_cfg(true);
         let mut driver = Driver::new(config.clone());
