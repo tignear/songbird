@@ -92,7 +92,7 @@ impl CryptoMode {
     pub const fn nonce_size(self) -> usize {
         match self {
             #[allow(deprecated)]
-            Self::Normal => RtpPacket::minimum_packet_size(),
+            Self::Normal => 0,
             #[allow(deprecated)]
             Self::Suffix => XSalsa20Poly1305::NONCE_SIZE,
             #[allow(deprecated)]
@@ -177,7 +177,13 @@ impl CryptoMode {
     ) -> Result<(usize, usize), CryptoError> {
         // FIXME on next: packet encrypt/decrypt should use an internal error
         //  to denote "too small" vs. "opaque".
-        let extension_size = (packet.packet()[0] as usize >> 4 & 1) * 4;
+        let extension_size = if matches!(self, Self::Aes256Gcm | Self::XChaCha20)
+            && (packet.packet()[0] as usize >> 4) & 1 == 1
+        {
+            4
+        } else {
+            0
+        };
         let header_len = packet.packet().len() - packet.payload().len() + extension_size;
         let (header, body) = packet.packet_mut().split_at_mut(header_len);
         let (slice_to_use, body_remaining) = self.nonce_slice(header, body)?;
@@ -185,8 +191,7 @@ impl CryptoMode {
         let nonce_slice = if slice_to_use.len() == self.algorithm_nonce_size() {
             slice_to_use
         } else {
-            let max_bytes_avail = slice_to_use.len();
-            nonce[..self.nonce_size().min(max_bytes_avail)].copy_from_slice(slice_to_use);
+            nonce[..slice_to_use.len()].copy_from_slice(slice_to_use);
             &nonce
         };
         match self {
@@ -240,7 +245,7 @@ impl CryptoMode {
         let nonce_slice = if slice_to_use.len() == self.algorithm_nonce_size() {
             slice_to_use
         } else {
-            nonce[..self.nonce_size()].copy_from_slice(slice_to_use);
+            nonce[..slice_to_use.len()].copy_from_slice(slice_to_use);
             &nonce
         };
         match self {
@@ -437,7 +442,7 @@ mod test {
         for mode in modes {
             buf.fill(0);
             let cipher = mode.new_cipher(&[7u8; XSalsa20Poly1305::KEY_SIZE]);
-            let mut pkt = MutableRtpPacket::new(&mut buf[..]).unwrap();
+            let mut pkt = MutableRtpPacket::new(&mut buf).unwrap();
             let mut crypto_state = CryptoState::from(mode);
             let payload = pkt.payload_mut();
             payload[XSalsa20Poly1305::TAG_SIZE..XSalsa20Poly1305::TAG_SIZE + TRUE_PAYLOAD.len()]
@@ -452,7 +457,6 @@ mod test {
 
             let final_pkt_len = MutableRtpPacket::minimum_packet_size() + final_payload_size;
             let mut pkt = MutableRtpPacket::new(&mut buf[..final_pkt_len]).unwrap();
-
             assert!(mode.decrypt_in_place(&mut pkt, &cipher).is_ok());
         }
     }

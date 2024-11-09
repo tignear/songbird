@@ -547,7 +547,11 @@ impl Mixer {
                     ..self.config.crypto_mode.payload_prefix_len() + SILENT_FRAME.len()]
                     .copy_from_slice(&SILENT_FRAME[..]);
 
-                mix_len = MixType::Passthrough(SILENT_FRAME.len());
+                mix_len = MixType::Passthrough(
+                    self.config.crypto_mode.payload_prefix_len()
+                        + self.config.crypto_mode.payload_suffix_len()
+                        + SILENT_FRAME.len(),
+                );
             } else {
                 // Per official guidelines, send 5x silence BEFORE we stop speaking.
                 return Ok(0);
@@ -572,7 +576,12 @@ impl Mixer {
         let out = if let Some(OutputMode::Raw(_)) = &self.config.override_connection {
             // This case has been handled before buffer clearing above.
             let msg = match mix_len {
-                MixType::Passthrough(len) if len == SILENT_FRAME.len() => OutputMessage::Silent,
+                MixType::Passthrough(len)
+                    if len
+                        == self.config.crypto_mode.payload_prefix_len()
+                            + self.config.crypto_mode.payload_suffix_len()
+                            + SILENT_FRAME.len() =>
+                    OutputMessage::Silent,
                 MixType::Passthrough(len) => {
                     let rtp = RtpPacket::new(packet).expect(
                         "FATAL: Too few bytes in self.packet for RTP header.\
