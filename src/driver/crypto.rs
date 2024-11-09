@@ -206,7 +206,6 @@ impl CryptoMode {
                     .map(|()| (body_start, body_tail))
             },
             Self::Aes256Gcm | Self::XChaCha20 => {
-                println!("header: {:?}", header);
                 let body_tail = self.payload_suffix_len();
 
                 if self.tag_size() > body_remaining.len() {
