@@ -34,13 +34,13 @@ pub struct Config {
     #[cfg(feature = "driver")]
     /// Selected tagging mode for voice packet encryption.
     ///
-    /// Defaults to [`CryptoMode::Normal`].
+    /// Defaults to [`CryptoMode::Aes256Gcm`].
     ///
     /// Changes to this field will not immediately apply if the
     /// driver is actively connected, but will apply to subsequent
     /// sessions.
     ///
-    /// [`CryptoMode::Normal`]: CryptoMode::Normal
+    /// [`CryptoMode::Aes256Gcm`]: CryptoMode::Aes256Gcm
     pub crypto_mode: CryptoMode,
 
     #[cfg(all(feature = "driver", feature = "receive"))]
