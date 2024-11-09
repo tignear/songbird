@@ -31,9 +31,15 @@ pub enum CryptoMode {
     /// Nonce width of 4B (32b), at an extra 4B per packet (~0.2 kB/s).
     #[deprecated]
     Lite,
-    /// b
+    /// An additional random 4B suffix is used as the source of nonce bytes for the packet.
+    /// This nonce value increments by `1` with each packet.
+    ///
+    /// Nonce width of 4B (32b), at an extra 4B per packet (~0.2 kB/s).
     XChaCha20,
-    /// a
+    /// An additional random 4B suffix is used as the source of nonce bytes for the packet.
+    /// This nonce value increments by `1` with each packet.
+    ///
+    /// Nonce width of 4B (32b), at an extra 4B per packet (~0.2 kB/s).
     Aes256Gcm,
 }
 
@@ -291,32 +297,32 @@ pub enum CryptoState {
     /// The RTP header is used as the source of nonce bytes for the packet.
     ///
     /// No state is required.
-    #[deprecated="This will be discontinued by discord on November 18th, 2024."]
+    #[deprecated = "This will be discontinued by discord on November 18th, 2024."]
     Normal,
     /// An additional random 24B suffix is used as the source of nonce bytes for the packet.
     /// This is regenerated randomly for each packet.
     ///
     /// No state is required.
-    #[deprecated="This will be discontinued by discord on November 18th, 2024."]
+    #[deprecated = "This will be discontinued by discord on November 18th, 2024."]
     Suffix,
     /// An additional random 4B suffix is used as the source of nonce bytes for the packet.
     /// This nonce value increments by `1` with each packet.
     ///
     /// The last used nonce is stored.
-    #[deprecated="This will be discontinued by discord on November 18th, 2024."]
+    #[deprecated = "This will be discontinued by discord on November 18th, 2024."]
     Lite(Wrapping<u32>),
     /// An additional random 4B suffix is used as the source of nonce bytes for the packet.
     /// This nonce value increments by `1` with each packet.
     ///
     /// The RTP encryption range is determined dynamically and the header is validated as AEAD.
-    /// 
+    ///
     /// The last used nonce is stored.
     Aes256Gcm(Wrapping<u32>),
     /// An additional random 4B suffix is used as the source of nonce bytes for the packet.
     /// This nonce value increments by `1` with each packet.
-    /// 
+    ///
     /// The RTP encryption range is determined dynamically and the header is validated as AEAD.
-    /// 
+    ///
     /// The last used nonce is stored.
     XChaCha20(Wrapping<u32>),
 }
