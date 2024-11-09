@@ -177,8 +177,8 @@ impl CryptoMode {
     ) -> Result<(usize, usize), CryptoError> {
         // FIXME on next: packet encrypt/decrypt should use an internal error
         //  to denote "too small" vs. "opaque".
-        let header_len = packet.packet().len() - packet.payload().len()
-            + (packet.packet()[0] as usize >> 4 & 1) * 4;
+        let extension_size = (packet.packet()[0] as usize >> 4 & 1) * 4;
+        let header_len = packet.packet().len() - packet.payload().len() + extension_size;
         let (header, body) = packet.packet_mut().split_at_mut(header_len);
         let (slice_to_use, body_remaining) = self.nonce_slice(header, body)?;
         let mut nonce = vec![0; self.algorithm_nonce_size()];
@@ -216,7 +216,7 @@ impl CryptoMode {
                     body_remaining.split_at_mut(body_remaining.len() - self.tag_size());
                 cipher
                     .decrypt_in_place_detached(nonce_slice, header, data_bytes, tag_bytes)
-                    .map(|()| (0, body_tail))
+                    .map(|()| (extension_size + self.payload_prefix_len(), body_tail))
             },
         }
     }
