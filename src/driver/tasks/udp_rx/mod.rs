@@ -7,7 +7,7 @@ use self::{decode_sizes::*, playout_buffer::*, ssrc_state::*};
 use super::message::*;
 use crate::{
     constants::*,
-    driver::{Cipher, CryptoMode},
+    driver::Cipher,
     events::{context_data::VoiceTick, internal_data::*, CoreContext},
     Config,
 };

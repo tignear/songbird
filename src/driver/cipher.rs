@@ -6,7 +6,7 @@ use crypto_secretbox::XSalsa20Poly1305;
 pub enum Cipher {
     XSalsa20(XSalsa20Poly1305),
     XChaCha20(XChaCha20Poly1305),
-    Aes256Gcm(Aes256Gcm),
+    Aes256Gcm(Box<Aes256Gcm>),
 }
 
 impl Cipher {

@@ -5,7 +5,7 @@ use aes_gcm::Aes256Gcm;
 use byteorder::{NetworkEndian, WriteBytesExt};
 use chacha20poly1305::XChaCha20Poly1305;
 use crypto_secretbox::{Error as CryptoError, KeyInit as _, XSalsa20Poly1305};
-use discortp::{rtp::RtpPacket, MutablePacket};
+use discortp::MutablePacket;
 use rand::Rng;
 use std::num::Wrapping;
 
@@ -276,6 +276,7 @@ impl CryptoMode {
         }
     }
     /// Create a Cipher for the mode.
+    #[must_use]
     pub fn new_cipher(self, key: &[u8]) -> Cipher {
         use aead::KeySizeUser as _;
         match self {
@@ -283,8 +284,9 @@ impl CryptoMode {
             CryptoMode::Lite | CryptoMode::Normal | CryptoMode::Suffix => Cipher::XSalsa20(
                 XSalsa20Poly1305::new_from_slice(&key[..XSalsa20Poly1305::KEY_SIZE]).unwrap(),
             ),
-            CryptoMode::Aes256Gcm =>
-                Cipher::Aes256Gcm(Aes256Gcm::new_from_slice(&key[..Aes256Gcm::key_size()]).unwrap()),
+            CryptoMode::Aes256Gcm => Cipher::Aes256Gcm(Box::new(
+                Aes256Gcm::new_from_slice(&key[..Aes256Gcm::key_size()]).unwrap(),
+            )),
             CryptoMode::XChaCha20 => Cipher::XChaCha20(
                 XChaCha20Poly1305::new_from_slice(&key[..XChaCha20Poly1305::key_size()]).unwrap(),
             ),
@@ -361,23 +363,7 @@ impl CryptoState {
                 rand::thread_rng().fill(&mut packet.payload_mut()[payload_end..endpoint]);
             },
             #[allow(deprecated)]
-            Self::Lite(mut i) => {
-                (&mut packet.payload_mut()[payload_end..endpoint])
-                    .write_u32::<NetworkEndian>(i.0)
-                    .expect(
-                        "Nonce size is guaranteed to be sufficient to write u32 for lite tagging.",
-                    );
-                i += Wrapping(1);
-            },
-            Self::Aes256Gcm(mut i) => {
-                (&mut packet.payload_mut()[payload_end..endpoint])
-                    .write_u32::<NetworkEndian>(i.0)
-                    .expect(
-                        "Nonce size is guaranteed to be sufficient to write u32 for lite tagging.",
-                    );
-                i += Wrapping(1);
-            },
-            Self::XChaCha20(mut i) => {
+            Self::Lite(mut i) | Self::Aes256Gcm(mut i) | Self::XChaCha20(mut i) => {
                 (&mut packet.payload_mut()[payload_end..endpoint])
                     .write_u32::<NetworkEndian>(i.0)
                     .expect(
