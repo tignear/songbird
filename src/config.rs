@@ -211,7 +211,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             #[cfg(feature = "driver")]
-            crypto_mode: CryptoMode::Normal,
+            crypto_mode: CryptoMode::Aes256Gcm,
             #[cfg(all(feature = "driver", feature = "receive"))]
             decode_mode: DecodeMode::Decrypt,
             #[cfg(all(feature = "driver", feature = "receive"))]

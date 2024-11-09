@@ -2,7 +2,6 @@
 
 use crate::{
     constants::*,
-    driver::crypto::KEY_SIZE,
     input::{
         cached::Compressed,
         codecs::{CODEC_REGISTRY, PROBE},
@@ -11,7 +10,7 @@ use crate::{
     test_utils,
     tracks::LoopState,
 };
-use crypto_secretbox::{KeyInit, XSalsa20Poly1305 as Cipher};
+use crypto_secretbox::{KeyInit as _, XSalsa20Poly1305};
 use flume::Receiver;
 use std::{io::Cursor, net::UdpSocket, sync::Arc};
 use tokio::runtime::Handle;
@@ -75,7 +74,10 @@ impl Mixer {
 
         #[cfg(not(feature = "receive"))]
         let fake_conn = MixerConnection {
-            cipher: Cipher::new_from_slice(&[0u8; KEY_SIZE]).unwrap(),
+            cipher: Cipher::XSalsa20(
+                XSalsa20Poly1305::new_from_slice(&[0u8; XSalsa20Poly1305::KEY_SIZE]).unwrap(),
+            ),
+            #[allow(deprecated)]
             crypto_state: CryptoState::Normal,
             udp_tx,
         };

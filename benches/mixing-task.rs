@@ -31,8 +31,6 @@ use songbird::{
 };
 use std::{io::Cursor, net::UdpSocket, sync::Arc};
 use tokio::runtime::{Handle, Runtime};
-use xsalsa20poly1305::{KeyInit, XSalsa20Poly1305 as Cipher, KEY_SIZE};
-
 fn no_passthrough(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
 

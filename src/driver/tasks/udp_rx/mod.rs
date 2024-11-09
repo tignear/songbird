@@ -7,12 +7,11 @@ use self::{decode_sizes::*, playout_buffer::*, ssrc_state::*};
 use super::message::*;
 use crate::{
     constants::*,
-    driver::CryptoMode,
+    driver::{Cipher, CryptoMode},
     events::{context_data::VoiceTick, internal_data::*, CoreContext},
     Config,
 };
 use bytes::BytesMut;
-use crypto_secretbox::XSalsa20Poly1305 as Cipher;
 use discortp::{
     demux::{self, DemuxedMut},
     rtp::RtpPacket,
@@ -169,7 +168,7 @@ impl UdpRx {
                 let rtp = rtp.to_immutable();
                 let (rtp_body_start, rtp_body_tail, decrypted) = packet_data.unwrap_or_else(|| {
                     (
-                        CryptoMode::payload_prefix_len(),
+                        crypto_mode.payload_prefix_len(),
                         crypto_mode.payload_suffix_len(),
                         false,
                     )
@@ -214,7 +213,7 @@ impl UdpRx {
 
                 let (start, tail) = packet_data.unwrap_or_else(|| {
                     (
-                        CryptoMode::payload_prefix_len(),
+                        crypto_mode.payload_prefix_len(),
                         crypto_mode.payload_suffix_len(),
                     )
                 });

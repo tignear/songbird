@@ -5,10 +5,9 @@ use super::UdpRxMessage;
 use super::{Interconnect, TrackContext, WsMessage};
 
 use crate::{
-    driver::{Bitrate, Config, CryptoState},
+    driver::{Bitrate, Cipher, Config, CryptoState},
     input::{AudioStreamError, Compose, Parsed},
 };
-use crypto_secretbox::XSalsa20Poly1305 as Cipher;
 use flume::Sender;
 use std::{net::UdpSocket, sync::Arc};
 use symphonia_core::{errors::Error as SymphoniaError, formats::SeekedTo};

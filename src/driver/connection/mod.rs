@@ -6,9 +6,7 @@ use super::{
     tasks::{
         message::*,
         ws::{self as ws_task, AuxNetwork},
-    },
-    Config,
-    CryptoMode,
+    }, Cipher, Config, CryptoMode
 };
 use crate::{
     constants::*,
@@ -20,7 +18,6 @@ use crate::{
     ws::WsStream,
     ConnectionInfo,
 };
-use crypto_secretbox::{KeyInit, XSalsa20Poly1305 as Cipher};
 use discortp::discord::{IpDiscoveryPacket, IpDiscoveryType, MutableIpDiscoveryPacket};
 use error::{Error, Result};
 use flume::Sender;
@@ -349,8 +346,7 @@ async fn init_cipher(client: &mut WsStream, mode: CryptoMode) -> Result<Cipher> 
                     return Err(Error::CryptoModeInvalid);
                 }
 
-                return Cipher::new_from_slice(&desc.secret_key)
-                    .map_err(|_| Error::CryptoInvalidLength);
+                return Ok(mode.new_cipher(&desc.secret_key))
             },
             other => {
                 debug!(

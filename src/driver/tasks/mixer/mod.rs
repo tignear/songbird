@@ -15,7 +15,6 @@ use super::{
     error::{Error, Result},
     message::*,
 };
-use crate::driver::crypto::TAG_SIZE;
 use crate::{
     constants::*,
     driver::MixMode,
@@ -25,10 +24,7 @@ use crate::{
     Config,
 };
 use audiopus::{
-    coder::Encoder as OpusEncoder,
-    softclip::SoftClip,
-    Application as CodingMode,
-    Bitrate,
+    coder::Encoder as OpusEncoder, softclip::SoftClip, Application as CodingMode, Bitrate,
 };
 use discortp::{
     discord::MutableKeepalivePacket,
@@ -503,14 +499,15 @@ impl Mixer {
     #[inline]
     pub(crate) fn test_signal_empty_tick(&self) {
         match &self.config.override_connection {
-            Some(OutputMode::Raw(tx)) =>
-                drop(tx.send(crate::driver::test_config::TickMessage::NoEl)),
-            Some(OutputMode::Rtp(tx)) =>
-                drop(tx.send(crate::driver::test_config::TickMessage::NoEl)),
+            Some(OutputMode::Raw(tx)) => {
+                drop(tx.send(crate::driver::test_config::TickMessage::NoEl))
+            },
+            Some(OutputMode::Rtp(tx)) => {
+                drop(tx.send(crate::driver::test_config::TickMessage::NoEl))
+            },
             None => {},
         }
     }
-
     #[inline]
     pub fn mix_and_build_packet(&mut self, packet: &mut [u8]) -> Result<usize> {
         // symph_mix is an `AudioBuffer` (planar format), we need to convert this
@@ -545,8 +542,9 @@ impl Mixer {
                 );
 
                 let payload = rtp.payload_mut();
-
-                payload[TAG_SIZE..TAG_SIZE + SILENT_FRAME.len()].copy_from_slice(&SILENT_FRAME[..]);
+                payload[self.config.crypto_mode.payload_prefix_len()
+                    ..self.config.crypto_mode.payload_prefix_len() + SILENT_FRAME.len()]
+                    .copy_from_slice(&SILENT_FRAME[..]);
 
                 mix_len = MixType::Passthrough(SILENT_FRAME.len());
             } else {
@@ -580,7 +578,8 @@ impl Mixer {
                             (Blame: VOICE_PACKET_MAX?)",
                     );
                     let payload = rtp.payload();
-                    let opus_frame = (payload[TAG_SIZE..][..len]).to_vec();
+                    let opus_frame =
+                        (payload[self.config.crypto_mode.payload_prefix_len()..][..len]).to_vec();
 
                     OutputMessage::Passthrough(opus_frame)
                 },
@@ -618,7 +617,6 @@ impl Mixer {
             .conn_active
             .as_mut()
             .expect("Shouldn't be mixing packets without access to a cipher + UDP dest.");
-
         let mut rtp = MutableRtpPacket::new(packet).expect(
             "FATAL: Too few bytes in self.packet for RTP header.\
                 (Blame: VOICE_PACKET_MAX?)",
@@ -635,14 +633,15 @@ impl Mixer {
                 let total_payload_space = payload.len() - crypto_mode.payload_suffix_len();
                 self.encoder.encode_float(
                     &send_buffer[..self.config.mix_mode.sample_count_in_frame()],
-                    &mut payload[TAG_SIZE..total_payload_space],
+                    &mut payload[crypto_mode.payload_prefix_len()..total_payload_space],
                 )?
             },
         };
 
-        let final_payload_size = conn
-            .crypto_state
-            .write_packet_nonce(&mut rtp, TAG_SIZE + payload_len);
+        let final_payload_size = conn.crypto_state.write_packet_nonce(
+            &mut rtp,
+            payload_len + crypto_mode.payload_suffix_len() - crypto_mode.nonce_size(),
+        );
 
         // Packet encryption ignored in test modes.
         #[cfg(not(test))]
@@ -746,7 +745,7 @@ impl Mixer {
                 (Blame: VOICE_PACKET_MAX?)",
         );
         let payload = rtp.payload_mut();
-        let opus_frame = &mut payload[TAG_SIZE..];
+        let opus_frame = &mut payload[self.config.crypto_mode.payload_prefix_len()..];
 
         // Opus frame passthrough.
         // This requires that we have only one PLAYING track, who has volume 1.0, and an
@@ -839,8 +838,9 @@ impl Mixer {
             // to recreate? Probably not doable in the general case.
             match status {
                 MixStatus::Live => track.step_frame(),
-                MixStatus::Errored(e) =>
-                    track.playing = PlayMode::Errored(PlayError::Decode(e.into())),
+                MixStatus::Errored(e) => {
+                    track.playing = PlayMode::Errored(PlayError::Decode(e.into()))
+                },
                 MixStatus::Ended if track.do_loop() => {
                     drop(self.track_handles[i].seek(Duration::default()));
                     if !self.prevent_events {
