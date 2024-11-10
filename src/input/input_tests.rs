@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use crate::{
     driver::Driver,
     tracks::{PlayMode, ReadyState, Track},

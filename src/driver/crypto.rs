@@ -608,6 +608,7 @@ impl Cipher {
     /// If successful, this returns the number of bytes to be ignored from the
     /// start and end of the packet payload.
     #[inline]
+    #[cfg(any(feature = "receive", test))]
     pub(crate) fn decrypt_pkt_in_place(
         &self,
         packet: &mut impl MutablePacket,
@@ -670,6 +671,7 @@ impl Cipher {
 
 // Temporary functions -- MSRV is ostensibly 1.74, slice::split_at(_mut)_checked is 1.80+.
 // TODO: Remove in v0.5+ with MSRV bump to 1.81+.
+#[cfg(any(feature = "receive", test))]
 #[inline]
 #[must_use]
 const fn split_at_checked(els: &[u8], mid: usize) -> Option<(&[u8], &[u8])> {
@@ -680,6 +682,7 @@ const fn split_at_checked(els: &[u8], mid: usize) -> Option<(&[u8], &[u8])> {
     }
 }
 
+#[cfg(any(feature = "receive", test))]
 #[inline]
 #[must_use]
 fn split_at_mut_checked(els: &mut [u8], mid: usize) -> Option<(&mut [u8], &mut [u8])> {
@@ -696,14 +699,12 @@ mod test {
     use discortp::rtp::MutableRtpPacket;
 
     #[test]
+    #[allow(deprecated)]
     fn small_packet_decrypts_error() {
         let mut buf = [0u8; MutableRtpPacket::minimum_packet_size()];
         let modes = [
-            #[allow(deprecated)]
             CryptoMode::Normal,
-            #[allow(deprecated)]
             CryptoMode::Suffix,
-            #[allow(deprecated)]
             CryptoMode::Lite,
             CryptoMode::Aes256Gcm,
             CryptoMode::XChaCha20Poly1305,
