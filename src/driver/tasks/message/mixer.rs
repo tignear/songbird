@@ -5,7 +5,7 @@ use super::UdpRxMessage;
 use super::{Interconnect, TrackContext, WsMessage};
 
 use crate::{
-    driver::{Bitrate, Cipher, Config, CryptoState},
+    driver::{crypto::Cipher, Bitrate, Config, CryptoState},
     input::{AudioStreamError, Compose, Parsed},
 };
 use flume::Sender;

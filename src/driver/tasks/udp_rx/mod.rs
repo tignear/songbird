@@ -7,7 +7,7 @@ use self::{decode_sizes::*, playout_buffer::*, ssrc_state::*};
 use super::message::*;
 use crate::{
     constants::*,
-    driver::Cipher,
+    driver::crypto::Cipher,
     events::{context_data::VoiceTick, internal_data::*, CoreContext},
     Config,
 };
@@ -152,11 +152,12 @@ impl UdpRx {
                 }
 
                 let packet_data = if self.config.decode_mode.should_decrypt() {
-                    let out = crypto_mode
-                        .decrypt_in_place(&mut rtp, &self.cipher)
+                    let out = self
+                        .cipher
+                        .decrypt_rtp_in_place(&mut rtp)
                         .map(|(s, t)| (s, t, true));
 
-                    if let Err(e) = out {
+                    if let Err(ref e) = out {
                         warn!("RTP decryption failed: {:?}", e);
                     }
 
@@ -168,7 +169,7 @@ impl UdpRx {
                 let rtp = rtp.to_immutable();
                 let (rtp_body_start, rtp_body_tail, decrypted) = packet_data.unwrap_or_else(|| {
                     (
-                        crypto_mode.payload_prefix_len(),
+                        crypto_mode.payload_prefix_len2(),
                         crypto_mode.payload_suffix_len(),
                         false,
                     )
@@ -200,9 +201,9 @@ impl UdpRx {
             },
             DemuxedMut::Rtcp(mut rtcp) => {
                 let packet_data = if self.config.decode_mode.should_decrypt() {
-                    let out = crypto_mode.decrypt_in_place(&mut rtcp, &self.cipher);
+                    let out = self.cipher.decrypt_rtcp_in_place(&mut rtcp);
 
-                    if let Err(e) = out {
+                    if let Err(ref e) = out {
                         warn!("RTCP decryption failed: {:?}", e);
                     }
 
@@ -213,7 +214,7 @@ impl UdpRx {
 
                 let (start, tail) = packet_data.unwrap_or_else(|| {
                     (
-                        crypto_mode.payload_prefix_len(),
+                        crypto_mode.payload_prefix_len2(),
                         crypto_mode.payload_suffix_len(),
                     )
                 });

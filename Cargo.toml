@@ -14,15 +14,14 @@ rust-version = "1.74"
 version = "0.4.3"
 
 [dependencies]
+aead = { optional = true, version = "0.5.2" }
+aes-gcm = { optional = true, version = "0.10.3" }
 async-trait = { optional = true, version = "0.1" }
 audiopus = { optional = true, version = "0.3.0-rc.0" }
 byteorder = { optional = true, version = "1" }
 bytes = { optional = true, version = "1" }
-aead = { optional = true, version = "0.5.2" }
-typenum = { optional=true, version = "1.17.0" }
-crypto_secretbox = { optional = true, features = ["std"], version = "0.1" }
 chacha20poly1305 = { optional = true, version = "0.10.1" }
-aes-gcm = { optional = true, version = "0.10.3" }
+crypto_secretbox = { optional = true, features = ["std"], version = "0.1" }
 dashmap = { optional = true, version = "5" }
 derivative = "2"
 discortp = { default-features = false, features = ["discord", "pnet", "rtp"], optional = true, version = "0.6" }
@@ -56,6 +55,7 @@ tracing-futures = "0.2"
 twilight-gateway = { default-features = false, optional = true, version = "0.15.0" }
 twilight-model = { default-features = false, optional = true, version = "0.15.0" }
 typemap_rev = { optional = true, version = "0.3" }
+typenum = { optional = true, version = "1.17.0" }
 url = { optional = true, version = "2" }
 uuid = { features = ["v4"], optional = true, version = "1" }
 
@@ -85,15 +85,14 @@ gateway = [
     "tokio?/time",
 ]
 driver = [
+    "dep:aead",
+    "dep:aes-gcm",
     "dep:async-trait",
     "dep:audiopus",
     "dep:byteorder",
     "dep:bytes",
-    "dep:aead",
-    "dep:typenum",
-    "dep:crypto_secretbox",
     "dep:chacha20poly1305",
-    "dep:aes-gcm",
+    "dep:crypto_secretbox",
     "dep:discortp",
     "dep:flume",
     "dep:nohash-hasher",
@@ -115,6 +114,7 @@ driver = [
     "dep:tokio-tungstenite",
     "dep:tokio-util",
     "dep:typemap_rev",
+    "dep:typenum",
     "dep:url",
     "dep:uuid",
     "tokio?/fs",

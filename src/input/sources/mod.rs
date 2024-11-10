@@ -38,8 +38,8 @@ impl AsyncReadOnlySource {
     }
 
     /// Gets a reference to the underlying reader.
+    #[allow(clippy::borrowed_box)] // FIXME: Changing this may break compatibility. remedy in v0.5
     #[must_use]
-    #[allow(clippy::borrowed_box)] // FIXME: Changing this may break compatibility.
     pub fn get_ref(&self) -> &Box<dyn AsyncRead + Send + Sync + Unpin> {
         &self.stream
     }
