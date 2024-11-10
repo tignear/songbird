@@ -130,6 +130,7 @@ impl CryptoMode {
     /// Compliant SRTP would leave all extensions in cleartext, hence 'more' SRTP
     /// compliant.
     #[must_use]
+    #[cfg(any(feature = "receive", test))]
     pub(crate) const fn is_more_srtp_compliant(self) -> bool {
         match self {
             CryptoMode::Aes256Gcm | CryptoMode::XChaCha20Poly1305 => true,
@@ -141,7 +142,15 @@ impl CryptoMode {
     ///
     /// Creation fails if the key is the incorrect length for the target cipher.
     pub(crate) fn cipher_from_key(self, key: &[u8]) -> Result<Cipher, InvalidLength> {
-        self.algorithm().cipher_from_key(key)
+        match self.algorithm() {
+            EncryptionAlgorithm::Aes256Gcm => Aes256Gcm::new_from_slice(key)
+                .map(Box::new)
+                .map(Cipher::Aes256Gcm),
+            EncryptionAlgorithm::XChaCha20Poly1305 =>
+                XChaCha20Poly1305::new_from_slice(key).map(Cipher::XChaCha20Poly1305),
+            EncryptionAlgorithm::XSalsa20Poly1305 =>
+                XSalsa20Poly1305::new_from_slice(key).map(|v| Cipher::XSalsa20Poly1305(v, self)),
+        }
     }
 
     /// Returns a local priority score for a given [`CryptoMode`].
@@ -447,21 +456,6 @@ pub(crate) enum EncryptionAlgorithm {
 }
 
 impl EncryptionAlgorithm {
-    /// Returns an encryption cipher based on the supplied key.
-    ///
-    /// Creation fails if the key is the incorrect length for the target cipher.
-    pub(crate) fn cipher_from_key(self, key: &[u8]) -> Result<Cipher, InvalidLength> {
-        match self {
-            EncryptionAlgorithm::Aes256Gcm => Aes256Gcm::new_from_slice(key)
-                .map(Box::new)
-                .map(Cipher::Aes256Gcm),
-            EncryptionAlgorithm::XChaCha20Poly1305 =>
-                XChaCha20Poly1305::new_from_slice(key).map(Cipher::XChaCha20Poly1305),
-            EncryptionAlgorithm::XSalsa20Poly1305 =>
-                XSalsa20Poly1305::new_from_slice(key).map(Cipher::XSalsa20Poly1305),
-        }
-    }
-
     #[must_use]
     pub(crate) const fn encryption_tag_len(self) -> usize {
         match self {
@@ -475,7 +469,7 @@ impl EncryptionAlgorithm {
 impl From<&Cipher> for EncryptionAlgorithm {
     fn from(value: &Cipher) -> Self {
         match value {
-            Cipher::XSalsa20Poly1305(_) => EncryptionAlgorithm::XSalsa20Poly1305,
+            Cipher::XSalsa20Poly1305(..) => EncryptionAlgorithm::XSalsa20Poly1305,
             Cipher::XChaCha20Poly1305(_) => EncryptionAlgorithm::XChaCha20Poly1305,
             Cipher::Aes256Gcm(_) => EncryptionAlgorithm::Aes256Gcm,
         }
@@ -484,12 +478,21 @@ impl From<&Cipher> for EncryptionAlgorithm {
 
 #[derive(Clone)]
 pub enum Cipher {
-    XSalsa20Poly1305(XSalsa20Poly1305),
+    XSalsa20Poly1305(XSalsa20Poly1305, CryptoMode),
     XChaCha20Poly1305(XChaCha20Poly1305),
     Aes256Gcm(Box<Aes256Gcm>),
 }
 
 impl Cipher {
+    #[must_use]
+    pub(crate) fn mode(&self) -> CryptoMode {
+        match self {
+            Cipher::XSalsa20Poly1305(_, mode) => *mode,
+            Cipher::XChaCha20Poly1305(_) => CryptoMode::XChaCha20Poly1305,
+            Cipher::Aes256Gcm(_) => CryptoMode::Aes256Gcm,
+        }
+    }
+
     #[must_use]
     pub(crate) fn encryption_tag_len(&self) -> usize {
         EncryptionAlgorithm::from(self).encryption_tag_len()
@@ -502,10 +505,10 @@ impl Cipher {
     #[inline]
     pub fn encrypt_pkt_in_place(
         &self,
-        mode: CryptoMode,
         packet: &mut impl MutablePacket,
         payload_len: usize,
     ) -> Result<(), CryptoError> {
+        let mode = self.mode();
         let header_len = packet.packet().len() - packet.payload().len();
 
         let (header, body) = packet.packet_mut().split_at_mut(header_len);
@@ -524,7 +527,7 @@ impl Cipher {
         match self {
             // Older modes place the tag before the payload and do not authenticate
             // cleartext.
-            Self::XSalsa20Poly1305(secret_box) => {
+            Self::XSalsa20Poly1305(secret_box, _) => {
                 let mut nonce = crypto_secretbox::Nonce::default();
                 nonce[..mode.nonce_size()].copy_from_slice(slice_to_use);
 
@@ -557,9 +560,9 @@ impl Cipher {
     #[cfg(any(feature = "receive", test))]
     pub(crate) fn decrypt_rtp_in_place(
         &self,
-        mode: CryptoMode,
         packet: &mut MutableRtpPacket<'_>,
     ) -> Result<(usize, usize), InternalError> {
+        let mode = self.mode();
         // An exciting difference from the SRTP spec: Discord begins encryption
         // after the RTP extension *header*, encrypting the extensions themselves,
         // whereas the spec leaves all extensions in the clear.
@@ -575,7 +578,7 @@ impl Cipher {
             0
         };
 
-        let (mut start_estimate, end) = self.decrypt_pkt_in_place(mode, packet, plain_bytes)?;
+        let (mut start_estimate, end) = self.decrypt_pkt_in_place(packet, plain_bytes)?;
 
         // Update the start estimate to account for bytes occupied by extension headers.
         if has_extension {
@@ -593,12 +596,11 @@ impl Cipher {
     #[cfg(feature = "receive")]
     pub(crate) fn decrypt_rtcp_in_place(
         &self,
-        mode: CryptoMode,
         packet: &mut MutableRtcpPacket<'_>,
     ) -> Result<(usize, usize), InternalError> {
         // RTCP/SRTCP have identical handling -- no var-length elements
         // are included as part of the plaintext.
-        self.decrypt_pkt_in_place(mode, packet, 0)
+        self.decrypt_pkt_in_place(packet, 0)
     }
 
     /// Decrypts an arbitrary packet using the given key.
@@ -608,10 +610,10 @@ impl Cipher {
     #[inline]
     pub(crate) fn decrypt_pkt_in_place(
         &self,
-        mode: CryptoMode,
         packet: &mut impl MutablePacket,
         n_plaintext_body_bytes: usize,
     ) -> Result<(usize, usize), InternalError> {
+        let mode = self.mode();
         let header_len = packet.packet().len() - packet.payload().len();
         let plaintext_end = header_len + n_plaintext_body_bytes;
 
@@ -635,7 +637,7 @@ impl Cipher {
         match self {
             // Older modes place the tag before the payload and do not authenticate
             // cleartext.
-            Self::XSalsa20Poly1305(secret_box) => {
+            Self::XSalsa20Poly1305(secret_box, _) => {
                 let mut nonce = crypto_secretbox::Nonce::default();
                 nonce[..mode.nonce_size().min(slice_to_use.len())].copy_from_slice(slice_to_use);
 

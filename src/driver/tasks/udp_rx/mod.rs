@@ -154,7 +154,7 @@ impl UdpRx {
                 let packet_data = if self.config.decode_mode.should_decrypt() {
                     let out = self
                         .cipher
-                        .decrypt_rtp_in_place(crypto_mode, &mut rtp)
+                        .decrypt_rtp_in_place(&mut rtp)
                         .map(|(s, t)| (s, t, true));
 
                     if let Err(ref e) = out {
@@ -201,7 +201,7 @@ impl UdpRx {
             },
             DemuxedMut::Rtcp(mut rtcp) => {
                 let packet_data = if self.config.decode_mode.should_decrypt() {
-                    let out = self.cipher.decrypt_rtcp_in_place(crypto_mode, &mut rtcp);
+                    let out = self.cipher.decrypt_rtcp_in_place(&mut rtcp);
 
                     if let Err(ref e) = out {
                         warn!("RTCP decryption failed: {:?}", e);

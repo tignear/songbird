@@ -654,7 +654,7 @@ impl Mixer {
 
         if encrypt {
             conn.cipher
-                .encrypt_pkt_in_place(crypto_mode, &mut rtp, final_payload_size)?;
+                .encrypt_pkt_in_place(&mut rtp, final_payload_size)?;
         }
 
         Ok(RtpPacket::minimum_packet_size() + final_payload_size)
