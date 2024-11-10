@@ -789,25 +789,25 @@ mod test {
     #[test]
     #[allow(deprecated)]
     fn negotiate_cryptomode() {
-        // If we have no preference (or our preference is missing, choose the highest available in the set.
-        let set1 = [
+        // If we have no preference (or our preference is missing), choose the highest available in the set.
+        let test_set = [
             CryptoMode::Suffix,
             CryptoMode::XChaCha20Poly1305,
             CryptoMode::Lite,
         ]
         .map(CryptoMode::to_request_str);
         assert_eq!(
-            CryptoMode::negotiate(set1, None).unwrap(),
+            CryptoMode::negotiate(test_set, None).unwrap(),
             CryptoMode::XChaCha20Poly1305
         );
         assert_eq!(
-            CryptoMode::negotiate(set1, Some(CryptoMode::Aes256Gcm)).unwrap(),
+            CryptoMode::negotiate(test_set, Some(CryptoMode::Aes256Gcm)).unwrap(),
             CryptoMode::XChaCha20Poly1305
         );
 
         // Preference wins in spite of the defined `priority` value.
         assert_eq!(
-            CryptoMode::negotiate(set1, Some(CryptoMode::Suffix)).unwrap(),
+            CryptoMode::negotiate(test_set, Some(CryptoMode::Suffix)).unwrap(),
             CryptoMode::Suffix
         );
 
