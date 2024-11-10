@@ -11,8 +11,6 @@
 #[cfg(feature = "internals")]
 pub mod bench_internals;
 
-mod cipher;
-pub(crate) use cipher::Cipher;
 pub(crate) mod connection;
 mod crypto;
 #[cfg(feature = "receive")]

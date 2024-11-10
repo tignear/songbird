@@ -7,7 +7,7 @@
 
 pub use super::tasks::{message as task_message, mixer};
 
-pub use super::crypto::CryptoState;
+pub use super::crypto::{Cipher, CryptoState};
 
 use crate::{
     driver::tasks::message::TrackContext,

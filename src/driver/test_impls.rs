@@ -1,5 +1,10 @@
 #![allow(missing_docs)]
 
+use super::{
+    scheduler::*,
+    tasks::{message::*, mixer::Mixer},
+    *,
+};
 use crate::{
     constants::*,
     input::{
@@ -10,16 +15,10 @@ use crate::{
     test_utils,
     tracks::LoopState,
 };
-use crypto_secretbox::{KeyInit as _, XSalsa20Poly1305};
+use crypto_secretbox::XSalsa20Poly1305;
 use flume::Receiver;
 use std::{io::Cursor, net::UdpSocket, sync::Arc};
 use tokio::runtime::Handle;
-
-use super::{
-    scheduler::*,
-    tasks::{message::*, mixer::Mixer},
-    *,
-};
 
 // create a dummied task + interconnect.
 // measure perf at varying numbers of sources (binary 1--64) without passthrough support.
@@ -64,23 +63,25 @@ impl Mixer {
             .connect("127.0.0.1:5316")
             .expect("Failed to connect to local dest port.");
 
+        #[allow(deprecated)]
+        let mode = CryptoMode::Normal;
+        let cipher = mode
+            .cipher_from_key(&[0u8; XSalsa20Poly1305::KEY_SIZE])
+            .unwrap();
+        let crypto_state = mode.into();
+
         #[cfg(feature = "receive")]
         let fake_conn = MixerConnection {
-            cipher: Cipher::XSalsa20(
-                XSalsa20Poly1305::new_from_slice(&[0u8; XSalsa20Poly1305::KEY_SIZE]).unwrap(),
-            ),
-            crypto_state: CryptoState::Normal,
+            cipher,
+            crypto_state,
             udp_rx: udp_receiver_tx,
             udp_tx,
         };
 
         #[cfg(not(feature = "receive"))]
         let fake_conn = MixerConnection {
-            cipher: Cipher::XSalsa20(
-                XSalsa20Poly1305::new_from_slice(&[0u8; XSalsa20Poly1305::KEY_SIZE]).unwrap(),
-            ),
-            #[allow(deprecated)]
-            crypto_state: CryptoState::Normal,
+            cipher,
+            crypto_state,
             udp_tx,
         };
 

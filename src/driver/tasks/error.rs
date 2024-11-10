@@ -20,7 +20,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[non_exhaustive]
 pub enum Error {
     Crypto(CryptoError),
-    #[cfg(feature = "receive")]
+    #[cfg(any(feature = "receive", test))]
     /// Received an illegal voice packet on the voice UDP socket.
     IllegalVoicePacket,
     InterconnectFailure(Recipient),
