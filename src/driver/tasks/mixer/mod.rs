@@ -17,7 +17,7 @@ use super::{
 };
 use crate::{
     constants::*,
-    driver::MixMode,
+    driver::{CryptoMode, MixMode},
     events::EventStore,
     input::{Input, Parsed},
     tracks::{Action, LoopState, PlayError, PlayMode, TrackCommand, TrackHandle, TrackState, View},
@@ -510,6 +510,15 @@ impl Mixer {
         }
     }
 
+    pub fn crypto_mode(&self) -> CryptoMode {
+        let mode = self.conn_active.as_ref().map(|v| v.crypto_state.kind());
+        if cfg!(not(test)) {
+            mode.expect("Shouldn't be mixing packets without access to a cipher + UDP dest.")
+        } else {
+            mode.unwrap_or_else(|| self.config.crypto_mode)
+        }
+    }
+
     #[inline]
     pub fn mix_and_build_packet(&mut self, packet: &mut [u8]) -> Result<usize> {
         // symph_mix is an `AudioBuffer` (planar format), we need to convert this
@@ -544,7 +553,7 @@ impl Mixer {
                 );
 
                 let payload = rtp.payload_mut();
-                let pre_len = self.config.crypto_mode.payload_prefix_len2();
+                let pre_len = self.crypto_mode().payload_prefix_len2();
 
                 payload[pre_len..pre_len + SILENT_FRAME.len()].copy_from_slice(&SILENT_FRAME[..]);
 
@@ -581,7 +590,7 @@ impl Mixer {
                     );
                     let payload = rtp.payload();
                     let opus_frame =
-                        (payload[self.config.crypto_mode.payload_prefix_len2()..][..len]).to_vec();
+                        (payload[self.crypto_mode().payload_prefix_len2()..][..len]).to_vec();
 
                     OutputMessage::Passthrough(opus_frame)
                 },
@@ -745,7 +754,7 @@ impl Mixer {
                 (Blame: VOICE_PACKET_MAX?)",
         );
         let payload = rtp.payload_mut();
-        let opus_frame = &mut payload[self.config.crypto_mode.payload_prefix_len2()..];
+        let opus_frame = &mut payload[self.crypto_mode().payload_prefix_len2()..];
 
         // Opus frame passthrough.
         // This requires that we have only one PLAYING track, who has volume 1.0, and an

@@ -5,6 +5,7 @@ mod ssrc_state;
 use self::{decode_sizes::*, playout_buffer::*, ssrc_state::*};
 
 use super::message::*;
+use crate::driver::CryptoMode;
 use crate::{
     constants::*,
     driver::crypto::Cipher,
@@ -32,6 +33,7 @@ type RtpSsrc = u32;
 
 struct UdpRx {
     cipher: Cipher,
+    crypto_mode: CryptoMode,
     decoder_map: HashMap<RtpSsrc, SsrcState>,
     config: Config,
     rx: Receiver<UdpRxMessage>,
@@ -142,7 +144,7 @@ impl UdpRx {
         // For simplicity, if the event task fails then we nominate the mixing thread
         // to rebuild their context etc. (hence, the `let _ =` statements.), as it will
         // try to make contact every 20ms.
-        let crypto_mode = self.config.crypto_mode;
+        let crypto_mode = self.crypto_mode;
 
         match demux::demux_mut(packet.as_mut()) {
             DemuxedMut::Rtp(mut rtp) => {
@@ -178,7 +180,7 @@ impl UdpRx {
                 let entry = self
                     .decoder_map
                     .entry(rtp.get_ssrc())
-                    .or_insert_with(|| SsrcState::new(&rtp, &self.config));
+                    .or_insert_with(|| SsrcState::new(&rtp, crypto_mode, &self.config));
 
                 // Only do this on RTP, rather than RTCP -- this pins decoder state liveness
                 // to *speech* rather than just presence.
@@ -242,6 +244,7 @@ pub(crate) async fn runner(
     mut interconnect: Interconnect,
     rx: Receiver<UdpRxMessage>,
     cipher: Cipher,
+    crypto_mode: CryptoMode,
     config: Config,
     udp_socket: UdpSocket,
     ssrc_signalling: Arc<SsrcTracker>,
@@ -250,6 +253,7 @@ pub(crate) async fn runner(
 
     let mut state = UdpRx {
         cipher,
+        crypto_mode,
         decoder_map: HashMap::new(),
         config,
         rx,

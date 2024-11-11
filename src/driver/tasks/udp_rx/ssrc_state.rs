@@ -19,6 +19,7 @@ use tracing::{error, warn};
 #[derive(Debug)]
 pub struct SsrcState {
     playout_buffer: PlayoutBuffer,
+    crypto_mode: CryptoMode,
     decoder: OpusDecoder,
     decode_size: PacketDecodeSize,
     pub(crate) prune_time: Instant,
@@ -26,11 +27,12 @@ pub struct SsrcState {
 }
 
 impl SsrcState {
-    pub fn new(pkt: &RtpPacket<'_>, config: &Config) -> Self {
+    pub fn new(pkt: &RtpPacket<'_>, crypto_mode: CryptoMode, config: &Config) -> Self {
         let playout_capacity = config.playout_buffer_length.get() + config.playout_spike_length;
 
         Self {
             playout_buffer: PlayoutBuffer::new(playout_capacity, pkt.get_sequence().0),
+            crypto_mode,
             decoder: OpusDecoder::new(SAMPLE_RATE, Channels::Stereo)
                 .expect("Failed to create new Opus decoder for source."),
             decode_size: PacketDecodeSize::TwentyMillis,
@@ -72,8 +74,8 @@ impl SsrcState {
             let extensions = rtp.get_extension() != 0;
 
             let payload = rtp.payload();
-            let payload_offset = config.crypto_mode.payload_prefix_len2();
-            let payload_end_pad = payload.len() - config.crypto_mode.payload_suffix_len();
+            let payload_offset = self.crypto_mode.payload_prefix_len2();
+            let payload_end_pad = payload.len() - self.crypto_mode.payload_suffix_len();
 
             // We still need to compute missed packets here in case of long loss chains or similar.
             // This occurs due to the fallback in 'store_packet' (i.e., empty buffer and massive seq difference).

@@ -209,7 +209,7 @@ impl Connection {
             cipher: cipher.clone(),
             #[cfg(not(feature = "receive"))]
             cipher,
-            crypto_state: config.crypto_mode.into(),
+            crypto_state: chosen_crypto.into(),
             #[cfg(feature = "receive")]
             udp_rx: udp_receiver_msg_tx,
             udp_tx,
@@ -244,6 +244,7 @@ impl Connection {
             interconnect.clone(),
             udp_receiver_msg_rx,
             cipher,
+            chosen_crypto,
             config.clone(),
             udp_rx,
             ssrc_tracker,
